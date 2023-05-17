@@ -28,5 +28,5 @@ jobs:
         file: ./.examples/dockerfiles/full/apache
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: vanile/nextcloud-full:latest,vanile/nextcloud-full:$(date +%s)
+        tags: vanile/nextcloud-full:latest
 
