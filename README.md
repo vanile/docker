@@ -14,9 +14,9 @@
 
 A safe home for all your data. Access & share your files, calendars, contacts, mail & more from any device, on your terms.
 
-![logo](https://cdn.rawgit.com/nextcloud/docker/80dd587d847b184ba95d7187a2a7a56ae4cbbb7b/logo.svg)
+![logo](https://cdn.rawgit.com/nextcloud/docker/071b888f7f689caa62c1498b6c61cb3599bcea2b/logo.svg)
 
-This Docker micro-service image is developed and maintained by the Nextcloud community. Nextcloud GmbH does not offer support for this Docker image. When you are looking to get professional support, you can become an [enterprise](https://nextcloud.com/enterprise/) customer or use [Nextcloud All-in-One docker image](https://github.com/nextcloud/all-in-one#nextcloud-all-in-one) - as the name suggests, Nextcloud All-in-One provides easy deployment and maintenance of Nextcloud Hub included in this one Nextcloud instance.
+⚠️⚠️⚠️ This image is maintained by community volunteers and designed for expert use. For quick and easy deployment that supports the full set of Nextcloud Hub features, use the [Nextcloud All-in-One docker container](https://github.com/nextcloud/all-in-one#nextcloud-all-in-one) maintained by Nextcloud GmbH.
 
 # How to use this image
 This image is designed to be used in a micro-service environment. There are two versions of the image you can choose from.
@@ -71,6 +71,8 @@ $ docker run -d \
 mariadb:10.6
 ```
 
+### Additional volumes
+
 If you want to get fine grained access to your individual files, you can mount additional volumes for data, config, your theme and custom apps. The `data`, `config` files are stored in respective subfolders inside `/var/www/html/`. The apps are split into core `apps` (which are shipped with Nextcloud and you don't need to take care of) and a `custom_apps` folder. If you use a custom theme it would go into the `themes` subfolder.
 
 Overview of the folders that can be mounted as volumes:
@@ -91,9 +93,15 @@ $ docker run -d \
 -v theme:/var/www/html/themes/<YOUR_CUSTOM_THEME> \
 nextcloud
 ```
-If mounting additional volumes, you should note that data inside the main folder (`/var/www/html`) may be removed during installation and upgrades, unless listed in [upgrade.exclude](https://github.com/nextcloud/docker/blob/master/upgrade.exclude). You should consider:
-- Confirming that [upgrade.exclude](https://github.com/nextcloud/docker/blob/master/upgrade.exclude) contains the files and folders that should persist during installation and upgrades; or 
+
+### Custom volumes
+
+If mounting additional volumes under `/var/www/html`, you should consider:
+- Confirming that [upgrade.exclude](https://github.com/nextcloud/docker/blob/master/upgrade.exclude) contains the files and folders that should persist during installation and upgrades; or
 - Mounting storage volumes to locations outside of `/var/www/html`.
+
+> [!WARNING]
+> You should note that data inside the main folder (`/var/www/html`) will be overridden/removed during installation and upgrades, unless listed in [upgrade.exclude](https://github.com/nextcloud/docker/blob/master/upgrade.exclude). The additional volumes officially supported are already in that list, but custom volumes will need to be added by you. We suggest mounting custom storage volumes outside of `/var/www/html` and if possible read-only so that making this adjustment is unnecessary. If you must do so, however, you may build a custom image with a modified `/upgrade.exclude` file that incorporates your custom volume(s).
 
 
 ## Using the Nextcloud command-line interface
@@ -166,20 +174,24 @@ To use an external SMTP server, you have to provide the connection details. To c
 - `MAIL_FROM_ADDRESS` (not set by default): Set the local-part for the 'from' field in the emails sent by Nextcloud.
 - `MAIL_DOMAIN` (not set by default): Set a different domain for the emails than the domain where Nextcloud is installed.
 
+At least `SMTP_HOST`, `MAIL_FROM_ADDRESS` and `MAIL_DOMAIN` must be set for the configurations to be applied.
+
 Check the [Nextcloud documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/email_configuration.html) for other values to configure SMTP.
 
 To use an external S3 compatible object store as primary storage, set the following variables:
-- `OBJECTSTORE_S3_HOST`: The hostname of the object storage server
 - `OBJECTSTORE_S3_BUCKET`: The name of the bucket that Nextcloud should store the data in
+- `OBJECTSTORE_S3_REGION`: The region that the S3 bucket resides in
+- `OBJECTSTORE_S3_HOST`: The hostname of the object storage server
+- `OBJECTSTORE_S3_PORT`: The port that the object storage server is being served over
 - `OBJECTSTORE_S3_KEY`: AWS style access key
 - `OBJECTSTORE_S3_SECRET`: AWS style secret access key
-- `OBJECTSTORE_S3_PORT`: The port that the object storage server is being served over
+- `OBJECTSTORE_S3_STORAGE_CLASS`: The storage class to use when adding objects to the bucket
 - `OBJECTSTORE_S3_SSL` (default: `true`): Whether or not SSL/TLS should be used to communicate with object storage server
-- `OBJECTSTORE_S3_REGION`: The region that the S3 bucket resides in.
 - `OBJECTSTORE_S3_USEPATH_STYLE` (default: `false`): Not required for AWS S3
 - `OBJECTSTORE_S3_LEGACYAUTH` (default: `false`): Not required for AWS S3
 - `OBJECTSTORE_S3_OBJECT_PREFIX` (default: `urn:oid:`): Prefix to prepend to the fileid
 - `OBJECTSTORE_S3_AUTOCREATE` (default: `true`): Create the container if it does not exist
+- `OBJECTSTORE_S3_SSE_C_KEY` (not set by default): Base64 encoded key with a maximum length of 32 bytes for server side encryption (SSE-C)
 
 Check the [Nextcloud documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_files/primary_storage.html#simple-storage-service-s3) for more information.
 
@@ -202,7 +214,7 @@ To customize other PHP limits you can simply change the following variables:
 - `PHP_UPLOAD_LIMIT` (default `512M`) This sets the upload limit (`post_max_size` and `upload_max_filesize`) for big files. Note that you may have to change other limits depending on your client, webserver or operating system. Check the [Nextcloud documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_files/big_file_upload_configuration.html) for more information.
 
 To customize Apache max file upload limit you can change the following variable:
-- `APACHE_BODY_LIMIT` (default `1073741824` [1GiB]) This restricts the total 
+- `APACHE_BODY_LIMIT` (default `1073741824` [1GiB]) This restricts the total
 size of the HTTP request body sent from the client. It specifies the number of _bytes_ that are allowed in a request body. A value of **0** means **unlimited**. Check the [Nextcloud documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_files/big_file_upload_configuration.html#apache) for more information.
 
 
@@ -308,7 +320,7 @@ services:
 Then run `docker-compose up -d`, now you can access Nextcloud at http://localhost:8080/ from your host system.
 
 ## Base version - FPM
-When using the FPM image, you need another container that acts as web server on port 80 and proxies the requests to the Nextcloud container. In this example a simple nginx container is combined with the Nextcloud-fpm image and a MariaDB database container. The data is stored in docker volumes. The nginx container also needs access to static files from your Nextcloud installation. It gets access to all the volumes mounted to Nextcloud via the `volumes_from` option.The configuration for nginx is stored in the configuration file `nginx.conf`, that is mounted into the container. An example can be found in the examples section [here](https://github.com/nextcloud/docker/tree/master/.examples).
+When using the FPM image, you need another container that acts as web server on port 80 and proxies the requests to the Nextcloud container. In this example a simple nginx container is combined with the Nextcloud-fpm image and a MariaDB database container. The data is stored in docker volumes. The nginx container also needs access to static files from your Nextcloud installation. It gets access to all the volumes mounted to Nextcloud via the `volumes_from` option. The configuration for nginx is stored in the configuration file `nginx.conf`, that is mounted into the container. An example can be found in the examples section [here](https://github.com/nextcloud/docker/tree/master/.examples).
 
 As this setup does **not include encryption**, it should be run behind a proxy.
 
