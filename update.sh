@@ -2,7 +2,7 @@
 set -eo pipefail
 
 declare -A alpine_version=(
-	[default]='3.19'
+	[default]='3.21'
 )
 
 declare -A debian_version=(
@@ -84,7 +84,7 @@ variants=(
 	fpm-alpine
 )
 
-min_version='27'
+min_version='28'
 
 # version_greater_or_equal A B returns whether A >= B
 function version_greater_or_equal() {
