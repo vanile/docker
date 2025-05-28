@@ -82,7 +82,7 @@ Database:
 ```console
 $ docker run -d \
 -v db:/var/lib/mysql \
-mariadb:10.11
+mariadb:lts
 ```
 
 ### Additional volumes
@@ -141,12 +141,23 @@ If mounting additional volumes under `/var/www/html`, you should consider:
 
 **Data inside the main folder (`/var/www/html`) will be overridden/removed during installation and upgrades, unless listed in [upgrade.exclude](https://github.com/nextcloud/docker/blob/master/upgrade.exclude).** The additional volumes officially supported are already in that list, but custom volumes will need to be added by you. We suggest mounting custom storage volumes outside of `/var/www/html` and if possible read-only so that making this adjustment is unnecessary. If you must do so, however, you may build a custom image with a modified `/upgrade.exclude` file that incorporates your custom volume(s).
 
+## Running as an arbitrary user / file permissions / changing the default container user
+
+The default user within a container is root (uid = 0). By default, processes inside the container will expect to have root privileges. Network services will drop privileges and use `www-data` to serve requests. 
+
+Depending on your volumes configuration, this can lead to permission issues. You can address this by running the container with a different default user. When changing the default user, the image will no longer assume it has root privileges and will run all processes under the specified uid. To accomplish this, use the `--user` / `user` option in your container environment.
+
+See:
+
+- https://docs.docker.com/engine/containers/run/#user
+- https://github.com/docker-library/docs/tree/master/php#running-as-an-arbitrary-user
+- https://docs.podman.io/en/stable/markdown/podman-run.1.html#user-u-user-group
 
 ## Accessing the Nextcloud command-line interface (`occ`)
 
 To use the [Nextcloud command-line interface](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/occ_command.html) (aka. `occ` command):
 ```console
-$ docker exec --user www-data CONTAINER_ID php occ
+$ docker exec -it --user www-data CONTAINER_ID php occ
 ```
 or for docker compose:
 ```console
@@ -392,8 +403,11 @@ Make sure to pass in values for `MYSQL_ROOT_PASSWORD` and `MYSQL_PASSWORD` varia
 
 ```yaml
 services:
+  # Note: MariaDB is external service. You can find more information about the configuration here:
+  # https://hub.docker.com/_/mariadb
   db:
-    image: mariadb:10.11
+    # Note: Check the recommend version here: https://docs.nextcloud.com/server/latest/admin_manual/installation/system_requirements.html#server
+    image: mariadb:lts
     restart: always
     command: --transaction-isolation=READ-COMMITTED
     volumes:
@@ -404,6 +418,8 @@ services:
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=nextcloud
 
+  # Note: Redis is an external service. You can find more information about the configuration here:
+  # https://hub.docker.com/_/redis
   redis:
     image: redis:alpine
     restart: always
@@ -440,8 +456,11 @@ Make sure to pass in values for `MYSQL_ROOT_PASSWORD` and `MYSQL_PASSWORD` varia
 
 ```yaml
 services:
+  # Note: MariaDB is an external service. You can find more information about the configuration here:
+  # https://hub.docker.com/_/mariadb
   db:
-    image: mariadb:10.11
+    # Note: Check the recommend version here: https://docs.nextcloud.com/server/latest/admin_manual/installation/system_requirements.html#server
+    image: mariadb:lts
     restart: always
     command: --transaction-isolation=READ-COMMITTED
     volumes:
@@ -452,6 +471,8 @@ services:
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=nextcloud
 
+  # Note: Redis is an external service. You can find more information about the configuration here:
+  # https://hub.docker.com/_/redis
   redis:
     image: redis:alpine
     restart: always
@@ -470,15 +491,18 @@ services:
       - MYSQL_USER=nextcloud
       - MYSQL_HOST=db
 
+  # Note: Nginx is an external service. You can find more information about the configuration here:
+  # https://hub.docker.com/_/nginx/
   web:
-    image: nginx
+    image: nginx:alpine-slim
     restart: always
     ports:
       - 8080:80
     depends_on:
       - app
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # https://docs.nextcloud.com/server/latest/admin_manual/installation/nginx.html
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro 
     volumes_from:
       - app
 
@@ -503,8 +527,11 @@ Example:
 
 ```yaml
 services:
+  # Note: PostgreSQL is external service. You can find more information about the configuration here:
+  # https://hub.docker.com/_/postgres
   db:
-    image: postgres
+    # Note: Check the recommend version here: https://docs.nextcloud.com/server/latest/admin_manual/installation/system_requirements.html#server
+    image: postgres:alpine
     restart: always
     volumes:
       - db:/var/lib/postgresql/data
@@ -516,6 +543,8 @@ services:
       - postgres_db
       - postgres_password
       - postgres_user
+  # Note: Redis is an external service. You can find more information about the configuration here:
+  # https://hub.docker.com/_/redis
   redis:
     image: redis:alpine
     restart: always
